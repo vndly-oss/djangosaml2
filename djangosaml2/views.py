@@ -200,12 +200,14 @@ def login(request,
                 return HttpResponse(text_type(e))
             sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
                                   'sha256': SIG_RSA_SHA256}
-            sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+            logger.debug(conf)
+            # TODO: Use sha1 as default
+            sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha256')
             sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
             session_id, request_xml = client.create_authn_request(
                 location,
                 binding=binding,
-                sigalg=sigalg)
+                sign_alg=sigalg)
             try:
                 if PY3:
                     saml_request = base64.b64encode(binary_type(request_xml, 'UTF-8'))
