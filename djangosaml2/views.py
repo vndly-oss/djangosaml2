@@ -235,7 +235,7 @@ def login(request,
                 logger.debug("before prepare_for_authenticate")
                 session_id, result = client.prepare_for_authenticate(
                     entityid=selected_idp, relay_state=came_from,
-                    binding=binding, sigalg=sigalg)
+                    binding=binding, sign_alg=sigalg)
             except TypeError as e:
                 logger.error('Unable to know which IdP to use')
                 return HttpResponse(text_type(e))
