@@ -216,6 +216,7 @@ def login(request,
                 else:
                     saml_request = base64.b64encode(binary_type(request_xml))
 
+                logger.debug("render")
                 http_response = render(request, post_binding_form_template, {
                     'target_url': location,
                     'params': {
@@ -224,11 +225,13 @@ def login(request,
                         },
                     })
             except TemplateDoesNotExist:
+                logger.debug("TemplateDoesNotExist")
                 pass
 
         if not http_response:
             # use the html provided by pysaml2 if no template was specified or it didn't exist
             try:
+                logger.debug("before prepare_for_authenticate")
                 session_id, result = client.prepare_for_authenticate(
                     entityid=selected_idp, relay_state=came_from,
                     binding=binding)
