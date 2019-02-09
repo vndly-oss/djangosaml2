@@ -171,15 +171,16 @@ def login(request,
     client = Saml2Client(conf)
     http_response = None
 
+    sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
+                          'sha256': SIG_RSA_SHA256}
+    sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+    sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
+
     logger.debug('Redirecting user to the IdP via %s binding.', binding)
     if binding == BINDING_HTTP_REDIRECT:
         try:
             # do not sign the xml itself, instead use the sigalg to
             # generate the signature as a URL param
-            sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
-                                  'sha256': SIG_RSA_SHA256}
-            sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
-            sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
             nsprefix = get_namespace_prefixes()
             session_id, result = client.prepare_for_authenticate(
                 entityid=selected_idp, relay_state=came_from,
@@ -191,12 +192,6 @@ def login(request,
         else:
             http_response = HttpResponseRedirect(get_location(result))
     elif binding == BINDING_HTTP_POST:
-        sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
-                              'sha256': SIG_RSA_SHA256}
-        # TODO: Use sha1 as default
-        sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha256')
-        sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
-
         if post_binding_form_template:
             # get request XML to build our own html based on the template
             try:
@@ -204,20 +199,15 @@ def login(request,
             except TypeError as e:
                 logger.error('Unable to know which IdP to use')
                 return HttpResponse(text_type(e))
-            logger.debug("Before create_authn_request")
             session_id, request_xml = client.create_authn_request(
                 location,
                 binding=binding,
                 sign_alg=sigalg)
-            logger.debug("After create_authn_request")
             try:
                 if PY3:
                     saml_request = base64.b64encode(binary_type(request_xml, 'UTF-8'))
                 else:
                     saml_request = base64.b64encode(binary_type(request_xml))
-
-                logger.debug("render")
-                logger.debug(post_binding_form_template)
                 http_response = render(request, post_binding_form_template, {
                     'target_url': location,
                     'params': {
@@ -226,13 +216,11 @@ def login(request,
                         },
                     })
             except TemplateDoesNotExist:
-                logger.debug("TemplateDoesNotExist")
                 pass
 
         if not http_response:
             # use the html provided by pysaml2 if no template was specified or it didn't exist
             try:
-                logger.debug("before prepare_for_authenticate")
                 session_id, result = client.prepare_for_authenticate(
                     entityid=selected_idp, relay_state=came_from,
                     binding=binding, sign_alg=sigalg)
