@@ -173,9 +173,10 @@ def login(request,
 
     sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
                           'sha256': SIG_RSA_SHA256}
+    # This can be set on the root config using:
+    #  conf.setattr(context="", attr="_sp_authn_requests_signed_alg", val="sha256")
     sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
     sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
-    logger.debug("sigalg: %s", sigalg)
 
     logger.debug('Redirecting user to the IdP via %s binding.', binding)
     if binding == BINDING_HTTP_REDIRECT:
