@@ -171,15 +171,18 @@ def login(request,
     client = Saml2Client(conf)
     http_response = None
 
+    sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
+                          'sha256': SIG_RSA_SHA256}
+    # This can be set on the root config using:
+    #  conf.setattr(context="", attr="_sp_authn_requests_signed_alg", val="sha256")
+    sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+    sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
+
     logger.debug('Redirecting user to the IdP via %s binding.', binding)
     if binding == BINDING_HTTP_REDIRECT:
         try:
             # do not sign the xml itself, instead use the sigalg to
             # generate the signature as a URL param
-            sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
-                                  'sha256': SIG_RSA_SHA256}
-            sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
-            sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
             nsprefix = get_namespace_prefixes()
             session_id, result = client.prepare_for_authenticate(
                 entityid=selected_idp, relay_state=came_from,
@@ -200,7 +203,8 @@ def login(request,
                 return HttpResponse(text_type(e))
             session_id, request_xml = client.create_authn_request(
                 location,
-                binding=binding)
+                binding=binding,
+                sign_alg=sigalg)
             try:
                 if PY3:
                     saml_request = base64.b64encode(binary_type(request_xml, 'UTF-8'))
@@ -222,7 +226,7 @@ def login(request,
             try:
                 session_id, result = client.prepare_for_authenticate(
                     entityid=selected_idp, relay_state=came_from,
-                    binding=binding)
+                    binding=binding, sign_alg=sigalg)
             except TypeError as e:
                 logger.error('Unable to know which IdP to use')
                 return HttpResponse(text_type(e))
