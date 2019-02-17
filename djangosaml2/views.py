@@ -82,6 +82,31 @@ def callable_bool(value):
         return value
 
 
+def get_sigalg(conf):
+    # See also:
+    #    1. https://github.com/IdentityPython/pysaml2/pull/396
+    #    2. https://github.com/IdentityPython/pysaml2/pull/495
+    #
+    # Configuration example:
+    # {
+    #     'service': {
+    #         'sp': {
+    #             'authn_requests_signed': True,
+    #             'authn_requests_signed_alg': 'sha256'
+    #         }
+    #     }
+    # }
+    #
+    sign_requests = getattr(conf, '_sp_authn_requests_signed', False)
+
+    sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
+                          'sha256': SIG_RSA_SHA256}
+
+    sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+    logger.debug("sig_alg_option: %s", sig_alg_option)
+    return sig_alg_option_map.get(sig_alg_option, SIG_RSA_SHA1) if sign_requests else None
+
+
 def login(request,
           config_loader_path=None,
           wayf_template='djangosaml2/wayf.html',
@@ -171,12 +196,7 @@ def login(request,
     client = Saml2Client(conf)
     http_response = None
 
-    sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
-                          'sha256': SIG_RSA_SHA256}
-    # This can be set on the root config using:
-    #  conf.setattr(context="", attr="_sp_authn_requests_signed_alg", val="sha256")
-    sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
-    sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
+    sigalg = get_sigalg(conf)
 
     logger.debug('Redirecting user to the IdP via %s binding.', binding)
     if binding == BINDING_HTTP_REDIRECT:
@@ -368,6 +388,7 @@ def logout(request, config_loader_path=None):
     """
     state = StateCache(request.session)
     conf = get_config(config_loader_path, request)
+    sigalg = get_sigalg(conf)
 
     client = Saml2Client(conf, state_cache=state,
                          identity_cache=IdentityCache(request.session))
@@ -377,7 +398,7 @@ def logout(request, config_loader_path=None):
             'The session does not contain the subject id for user %s',
             request.user)
 
-    result = client.global_logout(subject_id)
+    result = client.global_logout(subject_id, sign_alg=sigalg)
 
     state.sync()
 

@@ -21,4 +21,11 @@ class Saml2Client(saml2.client.Saml2Client):
             except AttributeError:
                 logger.warning('SAML_LOGOUT_REQUEST_PREFERRED_BINDING setting is'
                     ' not defined. Default binding will be used.')
+
+        # 1. global_logout calls do_logout but does not forward kwargs, so we cannot use global_logout(sigalg=sigalg)
+        # 2. sigalg is used by BINDING_HTTP_REDIRECT
+        if kwargs.get('sign_alg') and not kwargs.get('sigalg'):
+            logger.debug("Setting sigalg: %s", kwargs.get('sign_alg'))
+            kwargs['sigalg'] = kwargs.get('sign_alg')
+
         return super(Saml2Client, self).do_logout(*args, **kwargs)
