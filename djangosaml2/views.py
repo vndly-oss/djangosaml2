@@ -82,6 +82,15 @@ def callable_bool(value):
         return value
 
 
+def get_sigalg(conf, sign_requests):
+    sig_alg_option_map = {'sha1': SIG_RSA_SHA1,
+                          'sha256': SIG_RSA_SHA256}
+    # This can be set on the root config using:
+    #  conf.setattr(context="", attr="_sp_authn_requests_signed_alg", val="sha256")
+    sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+    return sig_alg_option_map[sig_alg_option] if sign_requests else None
+
+
 def login(request,
           config_loader_path=None,
           wayf_template='djangosaml2/wayf.html',
@@ -147,6 +156,7 @@ def login(request,
 
     # choose a binding to try first
     sign_requests = getattr(conf, '_sp_authn_requests_signed', False)
+    logger.debug("SIGNED: %s", sign_requests)
     binding = BINDING_HTTP_POST if sign_requests else BINDING_HTTP_REDIRECT
     logger.debug('Trying binding %s for IDP %s', binding, selected_idp)
 
@@ -176,7 +186,9 @@ def login(request,
     # This can be set on the root config using:
     #  conf.setattr(context="", attr="_sp_authn_requests_signed_alg", val="sha256")
     sig_alg_option = getattr(conf, '_sp_authn_requests_signed_alg', 'sha1')
+    logger.debug("SIG_ALG_OPTION: %s", sig_alg_option)
     sigalg = sig_alg_option_map[sig_alg_option] if sign_requests else None
+    logger.debug("SIGALG: %s", sigalg)
 
     logger.debug('Redirecting user to the IdP via %s binding.', binding)
     if binding == BINDING_HTTP_REDIRECT:
