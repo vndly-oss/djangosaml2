@@ -32,7 +32,6 @@ from django.http import HttpResponseServerError  # 50x
 from django.views.decorators.http import require_POST
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist
-from django.utils.six import text_type, binary_type, PY3
 from django.views.decorators.csrf import csrf_exempt
 
 from saml2 import BINDING_HTTP_REDIRECT, BINDING_HTTP_POST
@@ -187,7 +186,7 @@ def login(request,
                 nsprefix=nsprefix)
         except TypeError as e:
             logger.error('Unable to know which IdP to use')
-            return HttpResponse(text_type(e))
+            return HttpResponse(str(e))
         else:
             http_response = HttpResponseRedirect(get_location(result))
     elif binding == BINDING_HTTP_POST:
@@ -197,15 +196,12 @@ def login(request,
                 location = client.sso_location(selected_idp, binding)
             except TypeError as e:
                 logger.error('Unable to know which IdP to use')
-                return HttpResponse(text_type(e))
+                return HttpResponse(str(e))
             session_id, request_xml = client.create_authn_request(
                 location,
                 binding=binding)
             try:
-                if PY3:
-                    saml_request = base64.b64encode(binary_type(request_xml, 'UTF-8'))
-                else:
-                    saml_request = base64.b64encode(binary_type(request_xml))
+                saml_request = base64.b64encode(bytes(request_xml, 'UTF-8'))
 
                 http_response = render(request, post_binding_form_template, {
                     'target_url': location,
@@ -225,7 +221,7 @@ def login(request,
                     binding=binding)
             except TypeError as e:
                 logger.error('Unable to know which IdP to use')
-                return HttpResponse(text_type(e))
+                return HttpResponse(str(e))
             else:
                 http_response = HttpResponse(result['data'])
     else:
@@ -479,7 +475,7 @@ def metadata(request, config_loader_path=None, valid_for=None):
     """
     conf = get_config(config_loader_path, request)
     metadata = entity_descriptor(conf)
-    return HttpResponse(content=text_type(metadata).encode('utf-8'),
+    return HttpResponse(content=str(metadata).encode('utf-8'),
                         content_type="text/xml; charset=utf8")
 
 
