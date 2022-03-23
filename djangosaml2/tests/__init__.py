@@ -35,10 +35,11 @@ try:
     from django.utils.encoding import force_text
 except ImportError:
     from django.utils.text import force_text
-from django.utils.six.moves.urllib.parse import urlparse, parse_qs
 
 from saml2.config import SPConfig
 from saml2.s_utils import decode_base64_and_inflate, deflate_and_base64_encode
+
+from six.moves.urllib.parse import urlparse, parse_qs
 
 from djangosaml2 import views
 from djangosaml2.cache import OutstandingQueriesCache
