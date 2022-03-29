@@ -32,7 +32,6 @@ from django.http import HttpResponseServerError  # 50x
 from django.views.decorators.http import require_POST
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist
-from django.utils.six import text_type, binary_type, PY3
 from django.views.decorators.csrf import csrf_exempt
 
 from saml2 import BINDING_HTTP_REDIRECT, BINDING_HTTP_POST
@@ -46,6 +45,8 @@ from saml2.response import (
 )
 from saml2.validate import ResponseLifetimeExceed, ToEarly
 from saml2.xmldsig import SIG_RSA_SHA1, SIG_RSA_SHA256  # support for SHA1 is required by spec
+
+from six import text_type, binary_type, PY3
 
 from djangosaml2.cache import IdentityCache, OutstandingQueriesCache
 from djangosaml2.cache import StateCache
