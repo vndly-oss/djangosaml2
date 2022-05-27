@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.conf.urls import url
+from django.urls import re_path
 from djangosaml2 import views
 
 
 urlpatterns = [
-    url(r'^login/$', views.login, name='saml2_login'),
-    url(r'^acs/$', views.assertion_consumer_service, name='saml2_acs'),
-    url(r'^logout/$', views.logout, name='saml2_logout'),
-    url(r'^ls/$', views.logout_service, name='saml2_ls'),
-    url(r'^ls/post/$', views.logout_service_post, name='saml2_ls_post'),
-    url(r'^metadata/$', views.metadata, name='saml2_metadata'),
+    re_path(r'^login/$', views.login, name='saml2_login'),
+    re_path(r'^acs/$', views.assertion_consumer_service, name='saml2_acs'),
+    re_path(r'^logout/$', views.logout, name='saml2_logout'),
+    re_path(r'^ls/$', views.logout_service, name='saml2_ls'),
+    re_path(r'^ls/post/$', views.logout_service_post, name='saml2_ls_post'),
+    re_path(r'^metadata/$', views.metadata, name='saml2_metadata'),
 ]
